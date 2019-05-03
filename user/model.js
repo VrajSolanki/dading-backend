@@ -778,3 +778,66 @@ exports.connectionSortAndFilter = function(userDetails){
   })
   return deferred.promise;
 }
+
+exports.myDings = function(userid){
+  var deferred = Q.defer();
+  const pool = new Pool(config.pg)
+ 
+  pool.connect((err, client, done) => {
+  
+    const shouldAbort = (err) => {
+      if (err) {
+        console.error('Error in transaction', err.stack)
+        client.query('ROLLBACK', (err) => {
+          if (err) {
+            console.error('Error rolling back client', err.stack)
+            deferred.reject(err.stack);
+          }
+          // release the client back to the pool
+          done()
+        })
+      }
+      return !!err
+    }
+    const getuserIdQuery = "select DISTINCT public.connection.receiver::character varying (250) from public.connection where public.connection.sender = $1;";
+    let value = [userid];
+    console.log("Starting transaction!!");
+    client.query('BEGIN', (err) => {
+      if (shouldAbort(err)) return
+      client.query(getuserIdQuery, value, (err, res) => {
+        if (shouldAbort(err)) return
+        const getDingsQuery = "select public.user.id::character varying (250), public.user.first_name::character varying (250), public.user.profile_image::character varying (250),public.topic.name::character varying (250) from public.user,public.mapping_user_topic,public.topic where public.user.id = public.mapping_user_topic.user_id and public.mapping_user_topic.topic_id = public.topic.id and public.user.id in ($1)";
+        let userids = [];
+        res.rows?res.rows.map(receiver => {
+          userids.push(receiver.receiver);
+        }):res.rows;
+        if(userids.length){
+          let value = [userids];
+          console.log("values----->",value);
+          console.log(getDingsQuery);
+          client.query(getDingsQuery, value, (err, res) => {
+            if (shouldAbort(err)) return
+            console.log("Dings--->",res.rows);
+            client.query('COMMIT', (err) => {
+              if (err) {
+                console.error('Error committing transaction', err.stack)
+              }
+              done()
+              deferred.resolve(res.rows);
+            })  
+          }) 
+        }else{
+          client.query('COMMIT', (err) => {
+            if (err) {
+              console.error('Error committing transaction', err.stack)
+            }
+            done()
+            
+            deferred.resolve(res.rows);
+          }) 
+        }
+      })
+    })
+  })
+  return deferred.promise;
+ }

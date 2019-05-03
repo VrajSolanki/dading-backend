@@ -146,6 +146,8 @@ var userRoutes = require('./user/routes.js');
 app.use('/chat/', chatRoutes);
 app.use('/user/',userRoutes)
 
-http.listen(3000,function(){
-  console.log('listening on *:3000');
+const PORT = process.env.PORT || 3000;
+
+http.listen(PORT, () => {
+  console.log(`Our app is running on port ${ PORT }`);
 });

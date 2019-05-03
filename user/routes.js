@@ -163,6 +163,16 @@ router.get('/getAchievementByUserId/:id', function (req, res) {
   })
 })
 
+router.get('/myDings/:id', function (req, res) {
+
+  userController.myDings(req.params.id).then(function (success) {
+      console.log("All Done.");
+      res.send(success);
+
+  },function (faliure) {
+      res.send(faliure)
+  })
+})
 
 router.get('/:id', function (req, res) {
   console.log(req.params.id);
@@ -205,5 +215,7 @@ router.post('/connectionSortAndFilter', function (req, res) {
       res.send(faliure)
   })
 })
+
+
 
 module.exports = router

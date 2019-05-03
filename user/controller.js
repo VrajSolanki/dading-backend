@@ -528,3 +528,29 @@ exports.connectionSortAndFilter = function (reqObject) {
 	})
 	return deferred.promise;
 };
+
+exports.myDings = function (userid) {
+    var deferred = Q.defer();
+    if(!userid){
+        var response = {
+			status :401,
+			message:"userid required."
+		}
+        deferred.reject(response);
+    }
+
+	userService.myDings(userid).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};

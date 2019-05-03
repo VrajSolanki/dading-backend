@@ -175,7 +175,7 @@ exports.addConversation = function(reqObject){
 		deferred.resolve(success);
 	},function(error){
 		console.error(error);
-		deferred.reject("error occured");
+		deferred.reject(error);
 	})
     return deferred.promise;
 }
@@ -186,7 +186,7 @@ exports.updateConversation = function(userDetails){
 		deferred.resolve(success);
 	},function(error){
 		console.error(error);
-		deferred.reject("error occured");
+		deferred.reject(error);
 	})
     return deferred.promise;
 }
@@ -197,7 +197,18 @@ exports.connectionSortAndFilter = function(userDetails){
 		deferred.resolve(success);
 	},function(error){
 		console.error(error);
-		deferred.reject("error occured");
+		deferred.reject(error);
+	})
+    return deferred.promise;
+}
+
+exports.myDings = function(userDetails){
+	var deferred = Q.defer();
+	userModel.myDings(userDetails).then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject(error);
 	})
     return deferred.promise;
 }
