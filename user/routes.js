@@ -42,6 +42,16 @@ router.post('/register', function (req, res) {
   })
 })
 
+router.post('/registerImplicit', function (req, res) {
+  console.log(req.body);
+
+  userController.userRegisterImplicit(req.body).then(function (success) {
+      console.log("All Done.");
+      res.send(success);
+  },function (faliure) {
+      res.send(faliure)
+  })
+})
 router.put('/update', function (req, res) {
   console.log(req.body);
 
@@ -99,6 +109,18 @@ router.get('/getTopicsByUserId/:id', function (req, res) {
   console.log(req.params.id);
 
   userController.getTopicsByUserId(req.params.id).then(function (success) {
+      console.log("All Done.");
+      res.send(success);
+
+  },function (faliure) {
+      res.send(faliure)
+  })
+})
+
+router.get('/topics', function (req, res) {
+  console.log(req.params.id);
+
+  userController.getTopics().then(function (success) {
       console.log("All Done.");
       res.send(success);
 
@@ -166,6 +188,17 @@ router.get('/getAchievementByUserId/:id', function (req, res) {
 router.get('/myDings/:id', function (req, res) {
 
   userController.myDings(req.params.id).then(function (success) {
+      console.log("All Done.");
+      res.send(success);
+
+  },function (faliure) {
+      res.send(faliure)
+  })
+})
+
+router.get('/myConnections/:id', function (req, res) {
+
+  userController.myConnections(req.params.id).then(function (success) {
       console.log("All Done.");
       res.send(success);
 

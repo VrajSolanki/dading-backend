@@ -100,6 +100,44 @@ pool.connect((err, client, done) => {
   return deferred.promise;
 }
 
+exports.userRegisterImplicit = function(userDetails){
+  var deferred = Q.defer();
+  const pool = new Pool(config.pg)
+  
+  pool.connect((err, client, done) => {
+  
+    const shouldAbort = (err) => {
+      if (err) {
+        console.error('Error in transaction', err.stack)
+        client.query('ROLLBACK', (err) => {
+          if (err) {
+            console.error('Error rolling back client', err.stack)
+            deferred.reject(err.stack);
+          }
+          // release the client back to the pool
+          done()
+        })
+      }
+      return !!err
+    }
+    const inputQuery = 'INSERT INTO public.user(id,first_name,last_name,phone,email,profile_image,work,education,industry,	certificates,password,gender,dob) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)';
+    let value = [userDetails.id,userDetails.first_name,userDetails.last_name,userDetails.phone,userDetails.email,userDetails.profile_image,userDetails.work,userDetails.education,userDetails.industry,userDetails.certificates,userDetails.password,userDetails.gender,userDetails.dob];
+    client.query('BEGIN', (err) => {
+      if (shouldAbort(err)) return
+      client.query(inputQuery, value, (err, res) => {
+        if (shouldAbort(err)) return
+        client.query('COMMIT', (err) => {
+         if (err) {
+           console.error('Error committing transaction', err.stack)
+         }
+         done()
+         deferred.resolve(res.rows);
+       })  
+      })
+    })
+  })
+    return deferred.promise;
+}
 
 function updateUserByID (id, cols) {
   delete  cols.userid;
@@ -405,7 +443,7 @@ exports.getRatingsByUserId = function(userDetails){
             }
             return !!err
           }
-          const inputQuery = 'INSERT INTO public.connection(id,sender,receiver,initiate,status) VALUES($1,$2,$3,$4) RETURNING *';
+          const inputQuery = 'INSERT INTO public.connection(id,sender,receiver,initiate,status) VALUES($1,$2,$3,$4,$5) RETURNING *';
           let value = [userDetails.id,userDetails.sender,userDetails.receiver,new Date(),userDetails.status];
           client.query('BEGIN', (err) => {
             if (shouldAbort(err)) return
@@ -806,16 +844,21 @@ exports.myDings = function(userid){
       if (shouldAbort(err)) return
       client.query(getuserIdQuery, value, (err, res) => {
         if (shouldAbort(err)) return
-        const getDingsQuery = "select public.user.id::character varying (250), public.user.first_name::character varying (250), public.user.profile_image::character varying (250),public.topic.name::character varying (250) from public.user,public.mapping_user_topic,public.topic where public.user.id = public.mapping_user_topic.user_id and public.mapping_user_topic.topic_id = public.topic.id and public.user.id in ($1)";
         let userids = [];
         res.rows?res.rows.map(receiver => {
           userids.push(receiver.receiver);
         }):res.rows;
+
         if(userids.length){
+          var params = [];
+          for(var i = 1; i <= userids.length; i++) {
+            params.push('$' + i);
+          }
+          const getDingsQuery = 'select DISTINCT public.user.id::character varying (250), public.user.first_name::character varying (250), public.user.profile_image::character varying (250),public.topic.name::character varying (250) from public.user,public.mapping_user_topic,public.topic where public.user.id = public.mapping_user_topic.user_id and public.mapping_user_topic.topic_id = public.topic.id and public.user.id in  (' + params.join(',') + ')';
           let value = [userids];
           console.log("values----->",value);
           console.log(getDingsQuery);
-          client.query(getDingsQuery, value, (err, res) => {
+          client.query(getDingsQuery, userids, (err, res) => {
             if (shouldAbort(err)) return
             console.log("Dings--->",res.rows);
             client.query('COMMIT', (err) => {
@@ -836,6 +879,130 @@ exports.myDings = function(userid){
             deferred.resolve(res.rows);
           }) 
         }
+      })
+    })
+  })
+  return deferred.promise;
+ }
+
+ //select DISTINCT public.connection.sender::character varying (250), public.connection.receiver::character varying (250),count(*) as conversations from public.connection where public.connection.sender = '1' group by public.connection.receiver,public.connection.sender order by public.connection.receiver;
+ exports.myConnections = function(userid){
+  var deferred = Q.defer();
+  const pool = new Pool(config.pg)
+ 
+  pool.connect((err, client, done) => {
+  
+    const shouldAbort = (err) => {
+      if (err) {
+        console.error('Error in transaction', err.stack)
+        client.query('ROLLBACK', (err) => {
+          if (err) {
+            console.error('Error rolling back client', err.stack)
+            deferred.reject(err.stack);
+          }
+          // release the client back to the pool
+          done()
+        })
+      }
+      return !!err
+    }
+    //select DISTINCT public.connection.sender::character varying (250), public.connection.receiver::character varying (250),count(*) as conversations from public.connection where public.connection.sender = '1' group by public.connection.receiver,public.connection.sender order by public.connection.receiver;
+    const getuserIdQuery = "select DISTINCT public.connection.sender::character varying (250), public.connection.receiver::character varying (250),count(*) as conversations from public.connection where public.connection.sender = $1 group by public.connection.receiver,public.connection.sender order by public.connection.receiver;";
+    let value = [userid];
+    console.log("Starting transaction!!");
+    client.query('BEGIN', (err) => {
+      if (shouldAbort(err)) return
+      client.query(getuserIdQuery, value, (err, res) => {
+        if (shouldAbort(err)) return
+        let userids = [];
+        res.rows?res.rows.map(receiver => {
+          userids.push(receiver.receiver);
+        }):res.rows;
+        var userData = res.rows;
+        console.log("userdate---->",userData);
+        if(userids.length){
+          var params = [];
+          for(var i = 1; i <= userids.length; i++) {
+            params.push('$' + i);
+          }
+          const getConnectionQuery = 'select public.user.id::character varying (250), public.user.first_name::character varying (250), public.user.profile_image::character varying (250) from public.user where public.user.id in  (' + params.join(',') + ')';
+          let value = [userids];
+          console.log("values----->",value);
+          console.log(getConnectionQuery);
+          var resultArray = [];
+          client.query(getConnectionQuery, userids, (err, res) => {
+            if (shouldAbort(err)) return
+            console.log("user--->",res.rows);
+            if(res.rows.length){
+              res.rows.map((user,index) => {
+                console.log("index--->",index);
+                var connectionObj = {};
+                if(user.id == userData[index].receiver){
+                  connectionObj['id'] = user.id;
+                  connectionObj['conversations'] = userData[index].conversations;
+                  connectionObj['first_name'] = user.first_name;
+                  connectionObj['profile_image'] = user.profile_image;
+                  resultArray.push(connectionObj);
+                }
+              })
+            }
+            client.query('COMMIT', (err) => {
+              if (err) {
+                console.error('Error committing transaction', err.stack)
+              }
+              done()
+              deferred.resolve(resultArray);
+            })  
+          }) 
+        }else{
+          client.query('COMMIT', (err) => {
+            if (err) {
+              console.error('Error committing transaction', err.stack)
+            }
+            done()
+            
+            deferred.resolve(res.rows);
+          }) 
+        }
+      })
+    })
+  })
+  return deferred.promise;
+ }
+ 
+ exports.getTopics = function(userDetails){
+  var deferred = Q.defer();
+  const pool = new Pool(config.pg)
+ 
+  pool.connect((err, client, done) => {
+  
+    const shouldAbort = (err) => {
+      if (err) {
+        console.error('Error in transaction', err.stack)
+        client.query('ROLLBACK', (err) => {
+          if (err) {
+            console.error('Error rolling back client', err.stack)
+            deferred.reject(err.stack);
+          }
+          // release the client back to the pool
+          done()
+        })
+      }
+      return !!err
+    }
+    const getQuery = "select public.topic.id::character varying (250), public.topic.name::character varying (250),public.topic.profile_pic::character varying (250) from public.topic";
+    //let value = [userDetails];
+    client.query('BEGIN', (err) => {
+      if (shouldAbort(err)) return
+      client.query(getQuery, (err, res) => {
+        if (shouldAbort(err)) return
+        client.query('COMMIT', (err) => {
+         if (err) {
+           console.error('Error committing transaction', err.stack)
+         }
+         done()
+         deferred.resolve(res.rows);
+       })  
       })
     })
   })

@@ -21,9 +21,14 @@ var numUsers = 0;
 io.on('connection', (socket) => {
   var addedUser = false;
 
+  socket.on("chat message", msg => {
+    console.log(msg);
+    io.emit("chat message", msg);
+  });
   // when the client emits 'new message', this listens and executes
   socket.on('new message', (data) => {
     // we tell the client to execute 'new message'
+    console.log("incomeing msg :",data);
     socket.broadcast.emit('new message', {
       username: socket.username,
       message: data
@@ -35,6 +40,7 @@ io.on('connection', (socket) => {
     if (addedUser) return;
 
     // we store the username in the socket session for this client
+    console.log("user will be added :",username);
     socket.username = username;
     ++numUsers;
     addedUser = true;

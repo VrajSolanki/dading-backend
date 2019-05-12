@@ -7,6 +7,11 @@ const uuidv4 = require('uuid/v4');
 exports.userLogin = function(userDetails){
     var deferred = Q.defer();
 	userModel.userLogin(userDetails).then(function(success){
+		if(userDetails.loginType == 'ga'){
+			userDetails['password'] = "google"
+		}else if(userDetails.loginType == 'fa'){
+			userDetails['password'] = "facebook"
+		}
 		deferred.resolve(success);
 	},function(error){
 		console.error(error);
@@ -29,6 +34,23 @@ exports.userRegister = function(userDetails){
     return deferred.promise;
 }
 
+exports.userRegisterImplicit = function(userDetails){
+	var deferred = Q.defer();
+	//userDetails['id'] = uuidv4();
+	if(userDetails.loginType == 'ga'){
+		userDetails['password'] = "google"
+	}else if(userDetails.loginType == 'fa'){
+		userDetails['password'] = "facebook"
+	}
+	userModel.userRegisterImplicit(userDetails).then(function(success){
+		success["datamsg"] = "Welcome!!";
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject(error);
+	})
+    return deferred.promise;
+}
 
 exports.userUpdate = function(userDetails){
 	var deferred = Q.defer();
@@ -209,6 +231,28 @@ exports.myDings = function(userDetails){
 	},function(error){
 		console.error(error);
 		deferred.reject(error);
+	})
+    return deferred.promise;
+}
+
+exports.myConnections = function(userDetails){
+	var deferred = Q.defer();
+	userModel.myConnections(userDetails).then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject(error);
+	})
+    return deferred.promise;
+}
+
+exports.getTopics = function(){
+	var deferred = Q.defer();
+	userModel.getTopics().then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
 	})
     return deferred.promise;
 }

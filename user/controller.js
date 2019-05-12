@@ -10,14 +10,17 @@ exports.userLogin = function (userDetails) {
 			message:"email required."
 		}
         deferred.reject(response);
-    }
-    if(!userDetails.password){
-        var response = {
-			status :401,
-			message:"password required."
+	}
+	if(userDetails.loginType != 'ga' && userDetails != 'fa'){
+		if(!userDetails.password){
+			var response = {
+				status :401,
+				message:"password required."
+			}
+			deferred.reject(response);
 		}
-		deferred.reject(response);
-    }
+	}
+
 	userService.userLogin(userDetails).then(function (success) {
 		var response = {
 			status :200,
@@ -44,7 +47,8 @@ exports.userRegister = function (userDetails) {
 			message:"email required."
 		}
         deferred.reject(response);
-    }
+	}
+
     if(!userDetails.password){
         var response = {
 			status :401,
@@ -68,6 +72,39 @@ exports.userRegister = function (userDetails) {
 	return deferred.promise;
 };
 
+
+exports.userRegisterImplicit = function (userDetails) {
+    var deferred = Q.defer();
+    if(!userDetails.email){
+        var response = {
+			status :401,
+			message:"email required."
+		}
+        deferred.reject(response);
+	}
+
+	if(userDetails.loginType != "ga" && userDetails.loginType != "fa"){
+		var response = {
+			status :401,
+			message:"invalid loginType."
+		}
+		deferred.reject(response);
+	}
+	userService.userRegisterImplicit(userDetails).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};
 
 
 exports.userUpdate = function (userDetails) {
@@ -540,6 +577,50 @@ exports.myDings = function (userid) {
     }
 
 	userService.myDings(userid).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};
+
+exports.myConnections = function (userid) {
+    var deferred = Q.defer();
+    if(!userid){
+        var response = {
+			status :401,
+			message:"userid required."
+		}
+        deferred.reject(response);
+    }
+
+	userService.myConnections(userid).then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};
+
+exports.getTopics = function () {
+    var deferred = Q.defer();
+	userService.getTopics().then(function (success) {
 		var response = {
 			status :200,
 			message:success
