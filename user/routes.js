@@ -153,7 +153,7 @@ router.put('/updateConnectionStatus', function (req, res) {
 router.get('/getRecommendation/:id', function (req, res) {
   console.log(req.params.id);
 
-  userController.getRecommendation(req.params.id).then(function (success) {
+  userController.getRe-commendation(req.params.id).then(function (success) {
       console.log("All Done.");
       res.send(success);
 
@@ -202,6 +202,16 @@ router.get('/myConnections/:id', function (req, res) {
       console.log("All Done.");
       res.send(success);
 
+  },function (faliure) {
+      res.send(faliure)
+  })
+})
+
+router.get('/city', function (req, res) {
+  console.log(req.body);
+  userController.getCity().then(function (success) {
+      console.log("All Done.");
+      res.send(success);
   },function (faliure) {
       res.send(faliure)
   })

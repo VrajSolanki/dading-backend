@@ -635,3 +635,22 @@ exports.getTopics = function () {
 	})
 	return deferred.promise;
 };
+
+
+exports.getCity = function () {
+    var deferred = Q.defer();
+	userService.getCity().then(function (success) {
+		var response = {
+			status :200,
+			message:success
+		}
+		deferred.resolve(response)
+	},function (faliure) {
+		var response = {
+			status :401,
+			message:faliure
+		}
+		deferred.reject(response)
+	})
+	return deferred.promise;
+};

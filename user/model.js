@@ -1166,3 +1166,68 @@ exports.connectionSortAndFilter = function (userDetails) {
         })
         return deferred.promise;
     }
+
+    exports.getCity = function (userDetails) {
+        var deferred = Q.defer();
+        const pool = new Pool(config.pg)
+
+        pool.connect((err, client, done) => {
+
+            const shouldAbort = (err) => {
+                if (err) {
+                    console.error('Error in transaction', err.stack)
+                    client.query('ROLLBACK', (err) => {
+                        if (err) {
+                            console.error('Error rolling back client', err.stack)
+                            deferred.reject(err.stack);
+                        }
+                        // release the client back to the pool
+                        done()
+                    })
+                }
+                return !!err
+            }
+            const getQuery = "select public.city.id::character varying (250), public.city.name::character va" +
+                    "rying (250) from public.city";
+            //let value = [userDetails];
+            client.query('BEGIN', (err) => {
+                if (shouldAbort(err)) 
+                    return
+                client.query(getQuery, (err, res) => {
+                    if (shouldAbort(err)) 
+                        return
+                        let finalres= null;
+                    if(res.rows && !res.rows.length){
+                        finalres = [{
+                            'id' : '1',
+                            'name' : "Banglore"
+                        },
+                        {
+                            'id' : '2',
+                            'name' : "Pune"
+                        },{
+                            'id' : '3',
+                            'name' : "Mumbai"
+                        },{
+                            'id' : '4',
+                            'name' : "Delhi"
+                        },{
+                            'id' : '5',
+                            'name' : "Hydrabad"
+                        },]
+                    }else{
+                    finalres = res.rows
+                    }
+
+                    client.query('COMMIT', (err) => {
+                        if (err) {
+                            console.error('Error committing transaction', err.stack)
+                        }
+                        done()
+                        deferred.resolve(finalres);
+                    })
+                })
+            })
+        })
+        return deferred.promise;
+    }

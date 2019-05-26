@@ -256,3 +256,14 @@ exports.getTopics = function(){
 	})
     return deferred.promise;
 }
+
+exports.getCity = function(){
+	var deferred = Q.defer();
+	userModel.getCity().then(function(success){
+		deferred.resolve(success);
+	},function(error){
+		console.error(error);
+		deferred.reject("error occured");
+	})
+    return deferred.promise;
+}
