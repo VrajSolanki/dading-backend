@@ -23,7 +23,7 @@
     "rquest": "^0.1.0",
     "sequence": "^3.0.0",
     "sma": "^0.1.1",
-    "socket.io": "^2.2.0",
+    "socket.io": "^2.5.0",
     "socket.io-client": "^2.2.0",
     "uniqid": "^5.0.3",
     "uuid": "^3.3.2"
